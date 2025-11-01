@@ -1,0 +1,208 @@
+# Battery Charger Configuration - Banner 544 09 (44Ah)
+# OWON SPE6205 (60V 20A Power Supply)
+#
+# Battery: Banner 544 09
+# Manufactured: 2022 (Lead-Calcium)
+# Capacity: 44Ah
+# Type: Flooded/Low-maintenance (removable valve caps)
+# Current voltage: 12.483V (~78% SOC)
+#
+# Charging per manufacturer spec: approx. 1/10 of rated capacity = 4.4A (C/10)
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"           # USB serial port
+  baudrate: 115200                # OWON uses 115200
+  timeout: 5.0                    # Serial timeout (seconds)
+
+  # Hardware limits (SPE6205 specifications)
+  max_voltage: 60.0               # V - Hardware maximum (0.01-60V range)
+  max_current: 20.0               # A - Hardware maximum (0.001-20A range)
+
+# Battery Specifications
+battery:
+  type: "lead_calcium_flooded"    # Lead-calcium with removable caps
+  model: "Banner 544 09"
+  nominal_voltage: 12.0           # V
+  capacity: 44.0                  # Ah
+  chemistry: "lead_calcium"       # Modern battery (2022)
+  manufacture_year: 2022
+  cca: 360                        # A (Cold Cranking Amps)
+
+# Charging Configuration
+charging:
+  # Default charging mode: IUoU, CV, Pulse, Trickle
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode Configuration - BANNER 44Ah OPTIMIZED
+  # FLOODED BATTERY WITH OPEN VALVE CAPS
+  # End-of-charge voltage: 17-17.5V for flooded lead-calcium
+  IUoU:
+    bulk_current: 4.4             # A - 0.1C for 44Ah (C/10 rate per manufacturer)
+                                   # Banner spec: ~10% of capacity
+
+    # End-of-charge voltage for flooded lead-calcium batteries
+    # 17-17.5V for flooded batteries with open caps
+    # 17.5V for new batteries, 17.0V for older batteries
+    absorption_voltage: 17.2      # V - End-of-charge voltage (battery from 2022)
+                                   # Gassing is BENEFICIAL - mixes electrolyte
+                                   # Monitor: stop if voltage plateaus (no further rise)
+
+    # Float voltage for maintenance charging
+    # WARNING: Continuous 13.8V causes grid corrosion (failure in 1.5 years)
+    # Tom's recommendation: Lower float (13.5-13.6V) or disable float entirely
+    # For daily-driven vehicles: Disable float (charging from vehicle is sufficient)
+    # For storage: Use 13.5V maximum or periodic conditioning instead
+    float_voltage: 13.5           # V - Reduced to prevent grid corrosion (was 13.8V)
+
+    absorption_current_threshold: 0.44  # A - Switch to float at C/100 (1% of capacity)
+    absorption_timeout: 7200      # seconds (2 hours max in absorption)
+    enable_float: true            # Enable float stage
+
+  # IUoU Deep Discharge Recovery Mode (for batteries < 50% charge)
+  # Current battery at 12.483V = 78% SOC, so normal IUoU is fine
+  IUoU_Recovery:
+    bulk_current: 4.4             # A - Same as normal IUoU
+    absorption_voltage: 17.5      # V - Maximum voltage for deep recovery
+    absorption_duration: 10800    # seconds (3 hours) - Extended absorption
+    float_voltage: 13.5           # V - Reduced to prevent grid corrosion (was 13.8V)
+    absorption_current_threshold: 0.35  # A - Lower threshold
+    enable_float: true
+
+  # Constant Voltage Mode Configuration - BANNER 44Ah
+  CV:
+    voltage: 17.2                 # V - End-of-charge voltage (constant voltage mode)
+    max_current: 4.4              # A - Current limit (C/10 rate)
+    min_current: 0.44             # A - Consider charged below this (C/100)
+
+  # Pure Constant Current Mode - Traditional 150-year method for open batteries
+  # "Die Stromladung ist die schnellste und sicherste Methode"
+  CC:
+    current: 4.4                  # A - Constant current (C/10 = 10% of capacity)
+    max_voltage: 18.0             # V - Safety limit only (won't regulate at this)
+                                  # Battery naturally reaches 17-17.5V (new) or 16V (older)
+                                  # Plateau detection determines completion
+
+  # Conditioning Mode - Tom's Extended High-Voltage Method
+  # For batteries that won't hold charge properly
+  # Results: Resting voltage 12.6V → 13.3V after 24-48h at 15.4-15.6V
+  Conditioning:
+    voltage: 15.5                 # V - Conditioning voltage (15.4-15.6V range)
+    max_current: 4.4              # A - Current limit (C/10 rate)
+    duration: 86400               # seconds (24 hours) - can extend to 48h
+    electrolysis_warning: 1.0     # A - Warn if current > this after 1 hour (water loss)
+
+  # Recond Mode - Reconditioning/Recovery (Desulfation)
+  # For sulfated batteries or after deep discharge
+  # Not needed for current battery (good condition)
+  Recond:
+    voltage: 16.0                 # V - Constant voltage for sulfation removal
+    current: 4.4                  # A - C/10 charging current
+    duration: 14400               # seconds (4 hours) - Extended desulfation
+    min_current: 0.44             # A - Minimum current threshold
+
+  # Pulse Charging Mode Configuration (Desulfation)
+  Pulse:
+    pulse_voltage: 16.0           # V - Pulse voltage (safe for lead-calcium)
+    pulse_current: 4.4            # A - Pulse current (C/10 rate)
+    rest_voltage: 13.5            # V - Rest voltage
+    pulse_duration: 20            # seconds
+    rest_duration: 40             # seconds
+    max_cycles: 30                # Pulse cycles
+
+  # Trickle Charge Mode Configuration
+  Trickle:
+    # WARNING: Continuous 13.8V causes grid corrosion
+    # Use 13.5V max or periodic conditioning (15.5V for 24h) instead
+    voltage: 13.5                 # V - Maintenance voltage (reduced from 13.8V)
+    current: 0.44                 # A - Very low current (C/100)
+
+# Safety Limits (Apply to all modes)
+safety:
+  # Absolute maximum limits
+  # End-of-charge voltage up to 17.5V for flooded batteries
+  absolute_max_voltage: 18.0      # V - Safety margin above 17.5V end-of-charge voltage
+  absolute_max_current: 20.0      # A - Hardware limit (SPE6205: 0.001-20A)
+
+  # Operational limits
+  min_voltage: 10.5               # V - Minimum safe voltage
+  warning_voltage: 12.5           # V - ⚠️  RECHARGE IMMEDIATELY below this!
+                                   # Per German technical guide: 12.5V = 80% SOC
+                                   # Current battery: 12.483V (just below warning)
+
+  max_charging_duration: 43200    # seconds (12 hours)
+
+  # Temperature limits (if sensor available)
+  max_temperature: 45.0           # °C - Stop if too hot
+  min_temperature: 0.0            # °C - Don't charge if too cold
+
+  # Monitoring intervals
+  measurement_interval: 5.0       # seconds - How often to measure
+  log_interval: 60.0              # seconds - How often to log to file
+
+  # Voltage plateau detection (for high-voltage flooded battery charging)
+  # Automatically stops charging if voltage stops rising above 16V
+  plateau_detection:
+    enabled: true                 # Automatic plateau detection
+    threshold_voltage: 16.0       # V - Start monitoring above this voltage
+    time_window: 900              # seconds (15 min) - Time window for plateau check
+    voltage_delta: 0.05           # V - Max rise to consider plateau
+
+  # Energy accounting / Coulomb counting
+  charging_efficiency: 0.83       # Lead-acid charging efficiency (83% = 1/1.2)
+                                  # PSU delivers 1.2Ah to store 1.0Ah in battery
+                                  # Accounts for losses as heat and gas
+
+# Temperature Sensor Configuration (Optional)
+temperature:
+  enabled: false                  # Set to true to enable temperature monitoring
+  sensor_type: "ds18b20"          # Sensor type (ds18b20 or none)
+  sensor_id: null                 # DS18B20 sensor ID (null = auto-detect)
+
+# MQTT Configuration
+mqtt:
+  enabled: true                   # Enable MQTT monitoring/control
+  broker: "localhost"             # MQTT broker address
+  port: 1883                      # MQTT broker port
+  username: ""                    # MQTT username (empty if no auth)
+  password: ""                    # MQTT password (empty if no auth)
+  client_id: "battery-charger"    # MQTT client ID
+  base_topic: "battery-charger"   # Base topic for all messages
+  qos: 1                          # Quality of Service (0, 1, or 2)
+  retain: true                    # Retain status messages
+  update_interval: 5.0            # seconds - How often to publish status
+
+  # Last Will and Testament (LWT) for offline detection
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging Configuration
+logging:
+  enabled: true                   # Enable data logging
+  log_dir: "logs"                 # Log directory (relative to project root)
+  format: "csv"                   # csv or json
+  max_files: 30                   # Keep last 30 log files
+
+  # Fields to log
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications (future feature)
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

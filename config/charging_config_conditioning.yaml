@@ -1,0 +1,106 @@
+# Conditioning Mode Configuration
+# Based on charging_config_personal.yaml
+# Mode: Conditioning (Tom's Method - 15.5V for 24-48h)
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"
+  baudrate: 115200
+  timeout: 5.0
+  max_voltage: 60.0
+  max_current: 20.0
+
+# Battery Specifications
+battery:
+  type: "lead_calcium_flooded"
+  model: "Banner 544 09"
+  nominal_voltage: 12.0
+  capacity: 44.0
+  chemistry: "lead_calcium"
+  manufacture_year: 2022
+  cca: 360
+
+# Charging Configuration - CONDITIONING MODE
+charging:
+  default_mode: "Conditioning"
+
+  # Conditioning Mode (Tom's Method)
+  Conditioning:
+    voltage: 15.5
+    max_current: 4.4
+    duration: 86400  # 24 hours (can extend to 48h)
+    electrolysis_warning: 1.0
+
+# Safety Limits
+safety:
+  absolute_max_voltage: 18.0
+  absolute_max_current: 20.0
+  min_voltage: 10.5
+  warning_voltage: 12.5
+  max_charging_duration: 172800  # 48 hours max for conditioning
+
+  max_temperature: 45.0
+  min_temperature: 0.0
+
+  measurement_interval: 5.0
+  log_interval: 60.0
+
+  # Voltage plateau detection (disabled for conditioning)
+  plateau_detection:
+    enabled: false
+    threshold_voltage: 16.0
+    time_window: 900
+    voltage_delta: 0.05
+
+  # Energy accounting
+  charging_efficiency: 0.83
+
+# Temperature Sensor
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+# MQTT Configuration
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

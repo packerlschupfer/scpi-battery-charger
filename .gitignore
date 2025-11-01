@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+*.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+.~*
+
+# Project specific - Personal configurations
+config/charging_config_local.yaml
+config/*_personal.yaml
+config/*_local.yaml
+*.pid
+.git.backup.*

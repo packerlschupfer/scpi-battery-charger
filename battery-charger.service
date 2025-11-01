@@ -1,0 +1,40 @@
+[Unit]
+Description=Battery Charger Controller (OWON SPE6205)
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+# NOTE: Change 'pi' to your username
+User=pi
+Group=dialout
+# NOTE: Change working directory to match your installation path
+WorkingDirectory=/home/pi/battery-charger
+Environment="PATH=/home/pi/battery-charger/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Run charger - NOTE: Remove --auto-start to require MQTT start command
+# With --auto-start: Charging begins immediately on service start
+# Without --auto-start: Wait for MQTT command to start charging
+ExecStart=/home/pi/battery-charger/venv/bin/python3 /home/pi/battery-charger/src/charger_main.py --config /home/pi/battery-charger/config/charging_config.yaml
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=600
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=battery-charger
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+MemoryLimit=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

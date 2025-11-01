@@ -1,0 +1,165 @@
+# Battery Charger Configuration Template
+# OWON SPE6103 (60V / 10A / 300W)
+#
+# This PSU is suitable for:
+# - Batteries up to ~70-80Ah (recommended for continuous operation)
+# - 12V, 24V, and 48V batteries (max 60V)
+# - Charging current up to 10A (0.1C for 100Ah, but 70-80Ah recommended)
+# - Higher voltage range than SPE3102/3103 (60V vs 30V)
+#
+# Copy this file and adjust for your specific battery
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6103"
+  port: "/dev/ttyUSB0"           # USB serial port
+  baudrate: 115200                # OWON uses 115200
+  timeout: 5.0                    # Serial timeout (seconds)
+
+  # Hardware limits (SPE6103 specifications)
+  max_voltage: 60.0               # V - Hardware maximum (0.01-60V range)
+  max_current: 10.0               # A - Hardware maximum (0.001-10A range)
+  max_power: 300.0                # W - Hardware power limit
+
+# Battery Specifications - EXAMPLE for 70Ah 12V battery
+battery:
+  type: "lead_calcium_flooded"    # Modern lead-calcium battery
+  nominal_voltage: 12.0           # V - Can also be 24V or 48V
+  capacity: 70.0                  # Ah - Adjust to YOUR battery
+  chemistry: "lead_calcium"       # Ca/Ca electrodes
+  manufacture_year: 2015          # Approximate (adjust to your battery)
+
+# Charging Configuration
+charging:
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode - Optimized for SPE6103
+  IUoU:
+    bulk_current: 7.0             # A - 0.1C for 70Ah (adjust to your battery!)
+                                   # SPE6103 max: 10A
+                                   # For 44Ah battery: 4.4A
+                                   # For 70Ah battery: 7.0A
+                                   # For 100Ah battery: 10.0A (max, not recommended for continuous)
+
+    absorption_voltage: 15.2      # V - Lead-calcium standard (12V battery)
+                                   # For 24V: 30.4V
+                                   # For 48V: 60.8V (exceeds PSU limit - use 60V)
+    float_voltage: 13.5           # V - Reduced to prevent grid corrosion (12V)
+                                   # For 24V: 27.0V
+    absorption_current_threshold: 0.7  # A - ~1% of capacity
+    absorption_timeout: 7200      # seconds (2 hours)
+    enable_float: true
+
+  # Recovery Mode
+  IUoU_Recovery:
+    bulk_current: 7.0             # A
+    absorption_voltage: 15.4      # V (12V battery)
+    absorption_duration: 10800    # seconds (3 hours)
+    float_voltage: 13.5           # V (12V battery)
+    absorption_current_threshold: 0.5  # A
+    enable_float: true
+
+  # Constant Voltage Mode
+  CV:
+    voltage: 15.0                 # V (12V battery)
+    max_current: 7.0              # A
+    min_current: 0.5              # A
+
+  # Pure Constant Current Mode
+  CC:
+    current: 7.0                  # A - 0.1C charging rate
+    max_voltage: 18.0             # V - Safety limit (12V battery)
+
+  # Conditioning Mode
+  Conditioning:
+    voltage: 15.5                 # V (12V battery)
+    max_current: 7.0              # A
+    duration: 86400               # seconds (24 hours)
+    electrolysis_warning: 1.0     # A
+
+  # Pulse Mode
+  Pulse:
+    pulse_voltage: 16.0           # V (12V battery)
+    pulse_current: 7.0            # A
+    rest_voltage: 13.5            # V
+    pulse_duration: 20            # seconds
+    rest_duration: 40             # seconds
+    max_cycles: 30
+
+  # Trickle Mode
+  Trickle:
+    voltage: 13.5                 # V (12V battery)
+    current: 0.5                  # A
+
+# Safety Limits
+safety:
+  absolute_max_voltage: 16.5      # V (12V battery - for 24V use 33V, for 48V use 60V)
+  absolute_max_current: 10.0      # A - Hardware limit
+  min_voltage: 10.5               # V (12V battery - for 24V use 21V)
+  warning_voltage: 12.5           # V (12V battery - for 24V use 25V)
+  max_charging_duration: 43200    # seconds (12 hours)
+
+  max_temperature: 45.0           # °C
+  min_temperature: 0.0            # °C
+
+  measurement_interval: 5.0       # seconds
+  log_interval: 60.0              # seconds
+
+  # Voltage plateau detection (for CC mode)
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 16.0       # V - Start monitoring above this (12V battery)
+    time_window: 900              # seconds (15 minutes)
+    voltage_delta: 0.05           # V - Maximum voltage rise in time window
+
+  # Energy accounting
+  charging_efficiency: 0.83       # 83% efficiency (17% loss to heat/gas)
+
+# Temperature Sensor
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+# MQTT Configuration
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

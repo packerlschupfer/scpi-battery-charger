@@ -1,0 +1,181 @@
+# Battery Charger Configuration - LEAD-CALCIUM BATTERIES (Modern, 2010+)
+# OWON SPE6205 (60V 20A Power Supply)
+#
+# IMPORTANT: This configuration is for MODERN lead-calcium batteries!
+# Lead-calcium batteries require HIGHER voltages than old lead-antimony batteries.
+# Using too-low voltages (14.4V) on lead-calcium batteries causes:
+#   - Incomplete charging
+#   - Sulfation
+#   - Premature failure
+#
+# Source: https://wiki.w311.info/index.php?title=Batterie_Heute
+#
+# How to identify lead-calcium battery:
+#   - Manufactured 2010 or later
+#   - Label says "Calcium" or "Ca/Ca"
+#   - Label says "Maintenance Free"
+#   - Standard in all modern vehicles since ~2010
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"           # USB serial port
+  baudrate: 115200                # OWON uses 115200
+  timeout: 5.0                    # Serial timeout (seconds)
+
+  # Hardware limits (SPE6205 specifications)
+  max_voltage: 60.0               # V - Hardware maximum (0.01-60V range)
+  max_current: 20.0               # A - Hardware maximum (0.001-20A range)
+
+# Battery Specifications
+battery:
+  type: "lead_calcium_flooded"    # Modern lead-calcium battery
+  nominal_voltage: 12.0           # V
+  capacity: 95.0                  # Ah
+  chemistry: "lead_calcium"       # Ca/Ca electrodes
+  manufacture_year: 2015          # Approximate (adjust to your battery)
+
+# Charging Configuration
+charging:
+  # Default charging mode: IUoU, CV, Pulse, Trickle
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode Configuration - LEAD-CALCIUM OPTIMIZED
+  IUoU:
+    bulk_current: 9.5             # A - 0.1C for 95Ah (C/10 rate, good balance)
+                                   # SPE6205 can deliver up to 20A
+                                   # C/10 (9.5A) is standard charging rate
+                                   # Use 4.75A for slower/gentler charge
+
+    # CRITICAL: Lead-calcium needs 15-15.4V for full charge!
+    absorption_voltage: 15.2      # V - Proper voltage for lead-calcium
+                                   # (vs 14.4V for old lead-antimony)
+
+    float_voltage: 13.8           # V - Maintenance voltage for lead-calcium
+                                   # (vs 13.6V for old lead-antimony)
+
+    absorption_current_threshold: 1.0  # A - Switch to float when current drops below this
+    absorption_timeout: 7200      # seconds (2 hours max in absorption)
+    enable_float: true            # Enable float stage
+
+  # IUoU Deep Discharge Recovery Mode (for batteries < 50% charge)
+  # Lead-calcium batteries develop acid stratification when deeply discharged
+  IUoU_Recovery:
+    bulk_current: 4.75            # A - Same as normal IUoU
+    absorption_voltage: 15.4      # V - HIGHER voltage to break stratification
+    absorption_duration: 10800    # seconds (3 hours) - Extended absorption
+    float_voltage: 13.8           # V - Normal float
+    absorption_current_threshold: 0.8  # A - Lower threshold (more complete charge)
+    enable_float: true
+
+  # Constant Voltage Mode Configuration - LEAD-CALCIUM
+  CV:
+    voltage: 15.0                 # V - Proper CV voltage for lead-calcium
+                                   # (vs 13.8V for old lead-antimony)
+    max_current: 9.5              # A - Current limit (C/10 rate)
+    min_current: 0.5              # A - Consider charged when below this
+
+  # Pulse Charging Mode Configuration (Desulfation)
+  # Lead-calcium can handle higher voltages without excessive gassing
+  Pulse:
+    pulse_voltage: 16.0           # V - Pulse voltage (safe for lead-calcium)
+                                   # Note: Lead-calcium gassing voltage is 15.8V
+                                   # Brief pulses to 16V are acceptable
+    pulse_current: 9.5            # A - Pulse current (C/10 rate)
+                                   # SPE6205 can deliver up to 20A
+    rest_voltage: 13.5            # V - Rest voltage
+    pulse_duration: 20            # seconds - Shorter pulses (safer)
+    rest_duration: 40             # seconds - Longer rest
+    max_cycles: 30                # More cycles at lower pulse voltage
+
+  # Trickle Charge Mode Configuration
+  Trickle:
+    voltage: 13.8                 # V - Maintenance voltage for lead-calcium
+                                   # (higher than 13.5V for lead-antimony)
+    current: 0.5                  # A - Very low current
+
+# Safety Limits (Apply to all modes)
+safety:
+  # Absolute maximum limits
+  # Note: Lead-calcium charging end voltage is 17V (per German wiki)
+  # But we use 16.5V for safety margin
+  absolute_max_voltage: 16.5      # V - Safe maximum for lead-calcium
+                                   # (vs 16.0V for lead-antimony)
+  absolute_max_current: 20.0      # A - Hardware limit (SPE6205: 0.001-20A)
+
+  # Operational limits
+  min_voltage: 10.5               # V - Minimum safe voltage
+  warning_voltage: 12.5           # V - ⚠️  RECHARGE IMMEDIATELY below this!
+                                   # Per German technical guide: 12.5V = 80% SOC
+                                   # Risk of permanent damage if discharged further
+
+  max_charging_duration: 43200    # seconds (12 hours)
+
+  # Temperature limits (if sensor available)
+  max_temperature: 45.0           # °C - Stop if too hot
+  min_temperature: 0.0            # °C - Don't charge if too cold
+
+  # Monitoring intervals
+  measurement_interval: 5.0       # seconds - How often to measure
+  log_interval: 60.0              # seconds - How often to log to file
+
+# Temperature Sensor Configuration (Optional)
+temperature:
+  enabled: false                  # Set to true to enable temperature monitoring
+  sensor_type: "ds18b20"          # Sensor type (ds18b20 or none)
+  sensor_id: null                 # DS18B20 sensor ID (null = auto-detect)
+                                   # Example: "28-0123456789ab"
+                                   # Setup: sudo raspi-config → Interface Options → 1-Wire
+
+# MQTT Configuration
+mqtt:
+  enabled: true                   # Enable MQTT monitoring/control
+  broker: "localhost"             # MQTT broker address
+  port: 1883                      # MQTT broker port
+  username: ""                    # MQTT username (empty if no auth)
+  password: ""                    # MQTT password (empty if no auth)
+  client_id: "battery-charger"    # MQTT client ID
+  base_topic: "battery-charger"   # Base topic for all messages
+  qos: 1                          # Quality of Service (0, 1, or 2)
+  retain: true                    # Retain status messages
+  update_interval: 5.0            # seconds - How often to publish status
+
+  # Last Will and Testament (LWT) for offline detection
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging Configuration
+logging:
+  enabled: true                   # Enable data logging
+  log_dir: "logs"                 # Log directory (relative to project root)
+  format: "csv"                   # csv or json
+  max_files: 30                   # Keep last 30 log files
+
+  # Fields to log
+  fields:
+    - timestamp
+    - voltage_measured
+    - current_measured
+    - voltage_setpoint
+    - current_setpoint
+    - charging_mode
+    - charging_state
+    - charging_stage
+    - elapsed_time
+    - progress_percent
+
+# Notifications (future feature)
+notifications:
+  # Email notifications
+  email_enabled: false
+  email_to: ""
+  email_from: ""
+
+  # Console notifications
+  console_enabled: true
+
+  # Events to notify
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

@@ -1,0 +1,161 @@
+# Battery Charger Configuration Template
+# OWON SPE3102 (30V / 10A / 200W)
+#
+# This PSU is suitable for:
+# - Batteries up to ~70-80Ah (recommended for continuous operation)
+# - 12V lead-acid batteries only (max 30V)
+# - Charging current up to 10A (0.1C for 100Ah, but 70-80Ah recommended)
+#
+# Copy this file and adjust for your specific battery
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE3102"
+  port: "/dev/ttyUSB0"           # USB serial port
+  baudrate: 115200                # OWON uses 115200
+  timeout: 5.0                    # Serial timeout (seconds)
+
+  # Hardware limits (SPE3102 specifications)
+  max_voltage: 30.0               # V - Hardware maximum (0.01-30V range)
+  max_current: 10.0               # A - Hardware maximum (0.001-10A range)
+  max_power: 200.0                # W - Hardware power limit
+
+# Battery Specifications - EXAMPLE for 70Ah battery
+battery:
+  type: "lead_calcium_flooded"    # Modern lead-calcium battery
+  nominal_voltage: 12.0           # V
+  capacity: 70.0                  # Ah - Adjust to YOUR battery
+  chemistry: "lead_calcium"       # Ca/Ca electrodes
+  manufacture_year: 2015          # Approximate (adjust to your battery)
+
+# Charging Configuration
+charging:
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode - Optimized for SPE3102
+  IUoU:
+    bulk_current: 7.0             # A - 0.1C for 70Ah (adjust to your battery!)
+                                   # SPE3102 max: 10A
+                                   # For 44Ah battery: 4.4A
+                                   # For 70Ah battery: 7.0A
+                                   # For 100Ah battery: 10.0A (max, not recommended for continuous)
+
+    absorption_voltage: 15.2      # V - Lead-calcium standard
+    float_voltage: 13.5           # V - Reduced to prevent grid corrosion
+    absorption_current_threshold: 0.7  # A - ~1% of capacity
+    absorption_timeout: 7200      # seconds (2 hours)
+    enable_float: true
+
+  # Recovery Mode
+  IUoU_Recovery:
+    bulk_current: 7.0             # A
+    absorption_voltage: 15.4      # V
+    absorption_duration: 10800    # seconds (3 hours)
+    float_voltage: 13.5           # V
+    absorption_current_threshold: 0.5  # A
+    enable_float: true
+
+  # Constant Voltage Mode
+  CV:
+    voltage: 15.0                 # V
+    max_current: 7.0              # A
+    min_current: 0.5              # A
+
+  # Pure Constant Current Mode
+  CC:
+    current: 7.0                  # A - 0.1C charging rate
+    max_voltage: 18.0             # V - Safety limit
+
+  # Conditioning Mode
+  Conditioning:
+    voltage: 15.5                 # V
+    max_current: 7.0              # A
+    duration: 86400               # seconds (24 hours)
+    electrolysis_warning: 1.0     # A
+
+  # Pulse Mode
+  Pulse:
+    pulse_voltage: 16.0           # V
+    pulse_current: 7.0            # A
+    rest_voltage: 13.5            # V
+    pulse_duration: 20            # seconds
+    rest_duration: 40             # seconds
+    max_cycles: 30
+
+  # Trickle Mode
+  Trickle:
+    voltage: 13.5                 # V
+    current: 0.5                  # A
+
+# Safety Limits
+safety:
+  absolute_max_voltage: 16.5      # V
+  absolute_max_current: 10.0      # A - Hardware limit
+  min_voltage: 10.5               # V
+  warning_voltage: 12.5           # V
+  max_charging_duration: 43200    # seconds (12 hours)
+
+  max_temperature: 45.0           # °C
+  min_temperature: 0.0            # °C
+
+  measurement_interval: 5.0       # seconds
+  log_interval: 60.0              # seconds
+
+  # Voltage plateau detection (for CC mode)
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 16.0       # V - Start monitoring above this
+    time_window: 900              # seconds (15 minutes)
+    voltage_delta: 0.05           # V - Maximum voltage rise in time window
+
+  # Energy accounting
+  charging_efficiency: 0.83       # 83% efficiency (17% loss to heat/gas)
+
+# Temperature Sensor
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+# MQTT Configuration
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

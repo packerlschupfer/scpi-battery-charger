@@ -1,0 +1,150 @@
+# Battery Charger Configuration
+# 4MAX Battery 12V 100Ah/800A BAT100/800R/JAP
+# OWON SPE6205 (60V / 20A / 500W)
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"
+  baudrate: 115200
+  timeout: 5.0
+  max_voltage: 60.0
+  max_current: 20.0
+  max_power: 500.0
+
+# Battery Specifications
+battery:
+  type: "lead_calcium_flooded"
+  model: "4MAX BAT100/800R/JAP"
+  nominal_voltage: 12.0
+  capacity: 100.0                 # 100Ah
+  chemistry: "lead_calcium"
+  manufacture_year: 2024          # Adjust if known
+  cca: 800
+
+# Charging Configuration
+charging:
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode - Optimized for 100Ah
+  IUoU:
+    bulk_current: 10.0            # 0.1C for 100Ah
+    absorption_voltage: 15.2      # Lead-calcium standard
+    float_voltage: 13.5           # Reduced to prevent grid corrosion
+    absorption_current_threshold: 1.0
+    absorption_timeout: 7200      # 2 hours
+    enable_float: true
+
+  # Recovery Mode (for deep discharge)
+  IUoU_Recovery:
+    bulk_current: 10.0            # 0.1C
+    absorption_voltage: 15.4      # Higher for stratification
+    absorption_duration: 10800    # 3 hours
+    float_voltage: 13.5
+    absorption_current_threshold: 0.8
+    enable_float: true
+
+  # Constant Voltage Mode
+  CV:
+    voltage: 15.0
+    max_current: 10.0
+    min_current: 0.5
+
+  # Pure Constant Current Mode (Tom's 150-year method)
+  CC:
+    current: 10.0                 # 0.1C
+    max_voltage: 18.0
+
+  # Conditioning Mode (Tom's Method)
+  Conditioning:
+    voltage: 15.5
+    max_current: 10.0
+    duration: 86400               # 24 hours
+    electrolysis_warning: 1.0
+
+  # Pulse Mode
+  Pulse:
+    pulse_voltage: 16.0
+    pulse_current: 10.0
+    rest_voltage: 13.5
+    pulse_duration: 20
+    rest_duration: 40
+    max_cycles: 30
+
+  # Trickle Mode
+  Trickle:
+    voltage: 13.5
+    current: 0.5
+
+# Safety Limits
+safety:
+  absolute_max_voltage: 16.5
+  absolute_max_current: 20.0
+  min_voltage: 10.5
+  warning_voltage: 12.5
+  max_charging_duration: 43200   # 12 hours
+
+  max_temperature: 45.0
+  min_temperature: 0.0
+
+  measurement_interval: 5.0
+  log_interval: 60.0
+
+  # Voltage plateau detection
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 16.0
+    time_window: 900              # 15 minutes
+    voltage_delta: 0.05
+
+  # Energy accounting
+  charging_efficiency: 0.83
+
+# Temperature Sensor
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+# MQTT Configuration
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

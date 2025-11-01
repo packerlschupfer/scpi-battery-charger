@@ -1,0 +1,18 @@
+# Raspberry Pi Battery Charger Dependencies
+# Install with: pip install -r requirements.txt
+
+# Serial communication
+pyserial>=3.5
+
+# MQTT for monitoring and control
+paho-mqtt>=1.6.1
+
+# Configuration
+pyyaml>=6.0
+
+# Data handling and logging
+pandas>=2.0.0
+
+# Optional: Web dashboard
+# flask>=2.3.0
+# flask-socketio>=5.3.0
