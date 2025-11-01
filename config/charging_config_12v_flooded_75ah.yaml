@@ -1,0 +1,128 @@
+# Battery Charger Configuration - 12V Flooded 75Ah (Wet/Open Cell)
+# Common for: Trucks, SUVs, marine starting batteries
+# Flooded batteries can handle higher voltages (16.2V absorption)
+
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"
+  baudrate: 115200
+  timeout: 5.0
+  max_voltage: 60.0
+  max_current: 20.0
+  max_power: 500.0
+
+battery:
+  type: "lead_acid_flooded"
+  model: "Generic 12V 75Ah Flooded"
+  nominal_voltage: 12.0
+  capacity: 75.0
+  chemistry: "lead_calcium"
+  maintenance_free: false
+
+charging:
+  default_mode: "IUoU"
+
+  IUoU:
+    bulk_current: 7.5              # 0.1C (C/10 rate)
+    absorption_voltage: 16.2       # 2.7V/cell
+    float_voltage: 13.5
+    absorption_current_threshold: 0.75
+    absorption_timeout: 7200
+    enable_float: true
+
+  IUoU_Recovery:
+    bulk_current: 7.5
+    absorption_voltage: 16.5
+    absorption_duration: 10800
+    float_voltage: 13.5
+    absorption_current_threshold: 0.6
+    enable_float: true
+
+  CV:
+    voltage: 16.0
+    max_current: 7.5
+    min_current: 0.75
+
+  CC:
+    current: 7.5
+    max_voltage: 16.5
+
+  Conditioning:
+    voltage: 16.5
+    max_current: 7.5
+    duration: 86400
+    electrolysis_warning: 1.0
+
+  Pulse:
+    pulse_voltage: 16.5
+    pulse_current: 7.5
+    rest_voltage: 13.5
+    pulse_duration: 20
+    rest_duration: 40
+    max_cycles: 30
+
+  Trickle:
+    voltage: 13.5
+    current: 0.75
+
+safety:
+  absolute_max_voltage: 17.0
+  absolute_max_current: 20.0
+  min_voltage: 10.5
+  warning_voltage: 12.5
+  max_charging_duration: 43200
+  max_temperature: 45.0
+  min_temperature: 0.0
+  measurement_interval: 5.0
+  log_interval: 60.0
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 16.5
+    time_window: 900
+    voltage_delta: 0.05
+  charging_efficiency: 0.83
+
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true

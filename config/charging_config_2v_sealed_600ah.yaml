@@ -1,0 +1,129 @@
+# Battery Charger Configuration - 2V Sealed 600Ah Industrial Cell
+# Common for: Large industrial sites, heavy duty backup power
+# Single cell (2V nominal) - sealed VRLA/AGM
+# NOTE: 20A charger limit - ideal would be 60A (0.1C), will charge slower
+
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"
+  baudrate: 115200
+  timeout: 5.0
+  max_voltage: 60.0
+  max_current: 20.0
+  max_power: 500.0
+
+battery:
+  type: "lead_acid_sealed_vrla_2v"
+  model: "Generic 2V 600Ah Industrial Cell"
+  nominal_voltage: 2.0
+  capacity: 600.0
+  chemistry: "lead_calcium"
+  maintenance_free: true
+
+charging:
+  default_mode: "IUoU"
+
+  IUoU:
+    bulk_current: 20.0             # Limited by PSU (0.033C, slower than ideal)
+    absorption_voltage: 2.4        # 2.4V/cell for sealed
+    float_voltage: 2.25            # 2.25V/cell standard
+    absorption_current_threshold: 2.0
+    absorption_timeout: 7200
+    enable_float: true
+
+  IUoU_Recovery:
+    bulk_current: 20.0
+    absorption_voltage: 2.5        # Slightly higher for recovery
+    absorption_duration: 10800
+    float_voltage: 2.25
+    absorption_current_threshold: 1.6
+    enable_float: true
+
+  CV:
+    voltage: 2.35
+    max_current: 20.0
+    min_current: 2.0
+
+  CC:
+    current: 20.0
+    max_voltage: 2.5
+
+  Conditioning:
+    voltage: 2.45
+    max_current: 20.0
+    duration: 86400
+    electrolysis_warning: 1.0
+
+  Pulse:
+    pulse_voltage: 2.5
+    pulse_current: 20.0
+    rest_voltage: 2.25
+    pulse_duration: 20
+    rest_duration: 40
+    max_cycles: 30
+
+  Trickle:
+    voltage: 2.25
+    current: 2.0
+
+safety:
+  absolute_max_voltage: 2.6
+  absolute_max_current: 20.0
+  min_voltage: 1.75
+  warning_voltage: 2.0
+  max_charging_duration: 43200
+  max_temperature: 45.0
+  min_temperature: 0.0
+  measurement_interval: 5.0
+  log_interval: 60.0
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 2.5
+    time_window: 900
+    voltage_delta: 0.02
+  charging_efficiency: 0.83
+
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true
