@@ -44,23 +44,25 @@ class BatteryDiagnostics:
 
         return voltage
 
-    def estimate_state_of_charge(self, voltage: float, battery_type: str = 'flooded') -> Dict:
+    def estimate_state_of_charge(self, voltage: float, battery_type: str = 'flooded', nominal_voltage: float = 12.0) -> Dict:
         """
         Estimate state of charge from resting voltage.
 
         Args:
             voltage: Resting voltage in V (after 2+ hours rest)
             battery_type: 'flooded' or 'agm'
+            nominal_voltage: Nominal battery voltage (2V, 6V, 12V, 24V, etc.)
 
         Returns:
             Dictionary with SOC estimate and battery status
         """
-        # SOC lookup tables based on battery type
+        # SOC lookup tables based on battery type (for 12V, 6-cell battery)
         # Source: https://wiki.w311.info/index.php?title=Batterie_Heute
+        # These will be scaled for other voltages
 
         if battery_type == 'agm':
-            # AGM batteries have higher resting voltages
-            soc_table = [
+            # AGM batteries have higher resting voltages (12V baseline)
+            soc_table_12v = [
                 (12.90, 100),
                 (12.75, 90),
                 (12.65, 80),
@@ -71,8 +73,8 @@ class BatteryDiagnostics:
                 (10.50, 5),
             ]
         else:  # flooded (default)
-            # Flooded lead-calcium batteries
-            soc_table = [
+            # Flooded lead-calcium batteries (12V baseline)
+            soc_table_12v = [
                 (12.70, 100),
                 (12.60, 90),
                 (12.50, 80),  # ⚠️ Critical threshold - recharge immediately!
@@ -86,6 +88,11 @@ class BatteryDiagnostics:
                 (10.50, 0),
             ]
 
+        # Scale voltages based on nominal voltage
+        # 12V = 6 cells, so scale factor = nominal_voltage / 12.0
+        scale = nominal_voltage / 12.0
+        soc_table = [(v * scale, s) for v, s in soc_table_12v]
+
         # Find closest match
         soc = 0
         for v, s in soc_table:
@@ -93,14 +100,19 @@ class BatteryDiagnostics:
                 soc = s
                 break
 
-        # Determine battery health
-        if voltage < 10.5:
+        # Determine battery health (scaled thresholds)
+        critically_low = 10.5 * scale
+        deeply_discharged = 11.5 * scale
+        needs_charging = 12.5 * scale  # 80% SOC threshold
+        good_threshold = 12.7 * scale
+
+        if voltage < critically_low:
             status = "critically_low"
-        elif voltage < 11.5:
+        elif voltage < deeply_discharged:
             status = "deeply_discharged"
-        elif voltage < 12.5:
+        elif voltage < needs_charging:
             status = "needs_charging"  # ⚠️ Critical 80% threshold per German diagram!
-        elif voltage < 12.7:
+        elif voltage < good_threshold:
             status = "good"
         else:
             status = "excellent"
@@ -268,12 +280,13 @@ class BatteryDiagnostics:
         }
 
     def test_voltage_drop_over_time(self, initial_voltage: float = None,
-                                     duration_hours: int = 24) -> Dict:
+                                     duration_hours: int = 24,
+                                     nominal_voltage: float = 12.0) -> Dict:
         """
         Test voltage drop over time (self-discharge rate).
 
         After full charge, measure voltage decay over time.
-        Expert recommendation: After 4 weeks, voltage should still be 12.7-12.8V
+        Expert recommendation: After 4 weeks, voltage should still be 12.7-12.8V (for 12V)
 
         "Hat sie nach 4 Wochen immer noch 12,7...12,8 V ist sie in Ordnung.
         Fällt die Spannung schneller, entladen die Dendriden die Batterie."
@@ -281,6 +294,7 @@ class BatteryDiagnostics:
         Args:
             initial_voltage: Starting voltage (None = measure now)
             duration_hours: Test duration in hours (default 24h for quick test)
+            nominal_voltage: Nominal battery voltage (2V, 6V, 12V, 24V, etc.)
 
         Returns:
             Dictionary with self-discharge analysis
@@ -296,16 +310,15 @@ class BatteryDiagnostics:
 
         logger.info(f"Initial voltage: {initial_voltage:.3f}V")
 
-        # Expected voltage targets (from expert's post)
-        # Day 1-2: 13.0V
-        # After weeks: 12.9-12.8V
-        # After 4 weeks: 12.7-12.8V (healthy)
+        # Expected voltage targets (from expert's post) - scaled for voltage
+        # 12V baseline: Day 1-2: 13.0V, After weeks: 12.9-12.8V, After 4 weeks: 12.7-12.8V (healthy)
+        scale = nominal_voltage / 12.0
 
         expected_voltages = {
-            1: 13.0,   # 1 hour (approximate)
-            24: 12.95,  # 1 day
-            168: 12.85, # 1 week
-            672: 12.75  # 4 weeks
+            1: 13.0 * scale,   # 1 hour (approximate)
+            24: 12.95 * scale,  # 1 day
+            168: 12.85 * scale, # 1 week
+            672: 12.75 * scale  # 4 weeks
         }
 
         measurements = []
@@ -320,9 +333,9 @@ class BatteryDiagnostics:
         current_voltage = self.psu.measure_voltage()
         elapsed_hours = 0
 
-        # Calculate expected drop rate
-        # Healthy: ~0.2V over 4 weeks = 0.007V per day = 0.0003V per hour
-        expected_drop_per_hour = 0.0003
+        # Calculate expected drop rate (scaled)
+        # Healthy: ~0.2V over 4 weeks = 0.007V per day = 0.0003V per hour (for 12V)
+        expected_drop_per_hour = 0.0003 * scale
 
         return {
             'initial_voltage': initial_voltage,
@@ -330,7 +343,7 @@ class BatteryDiagnostics:
             'elapsed_hours': elapsed_hours,
             'voltage_drop': initial_voltage - current_voltage,
             'expected_drop_per_hour': expected_drop_per_hour,
-            'healthy_after_4_weeks': 12.7,  # Should be ≥12.7V after 4 weeks
+            'healthy_after_4_weeks': 12.7 * scale,  # Should be ≥12.7V (scaled) after 4 weeks
             'assessment': 'Test requires extended monitoring (hours to weeks)',
             'recommendation': 'Measure voltage daily for 1 week to assess self-discharge rate'
         }
@@ -580,8 +593,9 @@ class BatteryDiagnostics:
             print(f"   State of Charge: ~{soc.get('soc_percent', 0)}%")
             print(f"   Status: {soc.get('status', 'unknown').upper()}")
 
-            if soc.get('voltage', 0) < 12.5:
-                print("   ⚠️  WARNING: Voltage below 12.5V - recharge immediately!")
+            # Use status instead of hardcoded voltage
+            if soc.get('status') in ['needs_charging', 'deeply_discharged', 'critically_low']:
+                print(f"   ⚠️  WARNING: Battery needs charging! (Voltage: {soc.get('voltage', 0):.2f}V)")
 
         if results.get('voltage_recovery'):
             rec = results['voltage_recovery']
@@ -601,9 +615,12 @@ class BatteryDiagnostics:
         print("RECOMMENDATIONS:")
         print("=" * 60)
 
-        # Generate recommendations based on results
-        if results.get('soc_estimate', {}).get('voltage', 0) < 12.5:
-            print("❌ URGENT: Battery needs immediate charging (< 12.5V)")
+        # Generate recommendations based on status
+        soc_status = results.get('soc_estimate', {}).get('status', '')
+        if soc_status in ['critically_low', 'deeply_discharged']:
+            print("❌ URGENT: Battery needs immediate charging!")
+        elif soc_status == 'needs_charging':
+            print("⚠️  Battery should be charged soon (below 80% SOC)")
         elif results.get('soc_estimate', {}).get('soc_percent', 0) < 50:
             print("⚠️  Battery should be charged soon (< 50% SOC)")
         else:

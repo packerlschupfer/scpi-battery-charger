@@ -1,0 +1,159 @@
+# Battery Charger Configuration - 6V Lead-Acid Battery
+# OWON SPE6205 (60V 20A Power Supply)
+#
+# Battery: Generic 6V Battery (3 cells)
+# Technology: Lead-Acid (sealed or flooded)
+# Nominal Voltage: 6V (3 cells)
+# Capacity: 200Ah (example - adjust for your battery)
+#
+# Standard voltages (3 cells × 2V):
+# - Float: 6.75V (2.25V per cell)
+# - Absorption: 7.2V (2.4V per cell, sealed) or 7.5V (flooded)
+# - Minimum: 5.25V (1.75V per cell)
+# - Warning: 6.0V (2.0V per cell)
+
+# Power Supply Configuration
+power_supply:
+  model: "OWON SPE6205"
+  port: "/dev/ttyUSB0"
+  baudrate: 115200
+  timeout: 5.0
+  max_voltage: 60.0
+  max_current: 20.0
+  max_power: 500.0
+
+# Battery Specifications
+battery:
+  type: "lead_acid_6v"
+  model: "Generic 6V 200Ah"
+  nominal_voltage: 6.0
+  capacity: 200.0                 # Ah - ADJUST FOR YOUR BATTERY
+  chemistry: "lead_calcium"
+  maintenance_free: true
+
+# Charging Configuration
+charging:
+  default_mode: "IUoU"
+
+  # IUoU (3-Stage) Mode - 6V Battery (3 cells)
+  IUoU:
+    bulk_current: 20.0            # 0.1C for 200Ah (C/10 rate) - ADJUST!
+    absorption_voltage: 7.2       # 2.4V per cell × 3 (sealed)
+    float_voltage: 6.75           # 2.25V per cell × 3
+    absorption_current_threshold: 2.0
+    absorption_timeout: 7200      # 2 hours
+    enable_float: true
+
+  # Recovery Mode (for deep discharge)
+  IUoU_Recovery:
+    bulk_current: 20.0
+    absorption_voltage: 7.5       # 2.5V per cell × 3 (slightly higher)
+    absorption_duration: 10800    # 3 hours
+    float_voltage: 6.75
+    absorption_current_threshold: 1.6
+    enable_float: true
+
+  # Constant Voltage Mode
+  CV:
+    voltage: 7.0
+    max_current: 20.0
+    min_current: 2.0
+
+  # Constant Current Mode
+  CC:
+    current: 20.0                 # 0.1C
+    max_voltage: 7.5              # Safety limit
+
+  # Conditioning Mode
+  Conditioning:
+    voltage: 7.35                 # 2.45V per cell × 3
+    max_current: 20.0
+    duration: 86400               # 24 hours
+    electrolysis_warning: 1.0
+
+  # Pulse Mode
+  Pulse:
+    pulse_voltage: 7.5
+    pulse_current: 20.0
+    rest_voltage: 6.75
+    pulse_duration: 20
+    rest_duration: 40
+    max_cycles: 30
+
+  # Trickle Mode
+  Trickle:
+    voltage: 6.75
+    current: 2.0
+
+# Safety Limits
+safety:
+  absolute_max_voltage: 7.8       # 2.6V per cell × 3
+  absolute_max_current: 20.0
+  min_voltage: 5.25               # 1.75V per cell × 3
+  warning_voltage: 6.0            # 2.0V per cell × 3
+  max_charging_duration: 43200    # 12 hours
+
+  max_temperature: 45.0
+  min_temperature: 0.0
+
+  measurement_interval: 5.0
+  log_interval: 60.0
+
+  # Voltage plateau detection
+  plateau_detection:
+    enabled: true
+    threshold_voltage: 7.5
+    time_window: 900              # 15 minutes
+    voltage_delta: 0.05
+
+  # Energy accounting
+  charging_efficiency: 0.83
+
+# Temperature Sensor
+temperature:
+  enabled: false
+  sensor_type: "ds18b20"
+  sensor_id: null
+
+# MQTT Configuration
+mqtt:
+  enabled: true
+  broker: "localhost"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "battery-charger"
+  base_topic: "battery-charger"
+  qos: 1
+  retain: true
+  update_interval: 5.0
+  lwt_topic: "battery-charger/status/online"
+  lwt_payload: "false"
+
+# Logging
+logging:
+  enabled: true
+  log_dir: "logs"
+  format: "csv"
+  max_files: 30
+  fields:
+    - timestamp
+    - voltage
+    - current
+    - power
+    - ah_delivered
+    - wh_delivered
+    - ah_stored
+    - mode
+    - state
+    - stage
+    - elapsed
+    - progress
+
+# Notifications
+notifications:
+  console_enabled: true
+  notify_on_start: true
+  notify_on_complete: true
+  notify_on_error: true
+  notify_on_safety_limit: true
