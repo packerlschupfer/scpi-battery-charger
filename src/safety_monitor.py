@@ -359,20 +359,24 @@ class SafetyMonitor:
             Progress percentage (0-100)
         """
         if mode == "IUoU":
-            # 3-stage: Bulk 0-60%, Absorption 60-90%, Float 90-100%
+            # 3-stage: Bulk 0-70%, Absorption 70-95%, Float 100%
+            # Improved for smoother transitions and more realistic progression
             if stage == "bulk":
                 # Progress based on voltage approaching target
                 if target_voltage > 0:
                     voltage_progress = min(voltage / target_voltage, 1.0)
-                    return voltage_progress * 60.0
+                    return voltage_progress * 70.0
                 return 0.0
 
             elif stage == "absorption":
                 # Progress based on current taper
+                # Typical range: bulk_current (e.g., 4.4A) → threshold (e.g., 0.44A)
+                # Use threshold * 10 as realistic starting point
                 if absorption_current_threshold > 0:
-                    current_progress = 1.0 - min(current / (absorption_current_threshold * 3.0), 1.0)
-                    return 60.0 + (current_progress * 30.0)
-                return 60.0
+                    max_current = absorption_current_threshold * 10.0
+                    current_progress = 1.0 - min(current / max_current, 1.0)
+                    return 70.0 + (current_progress * 25.0)
+                return 70.0
 
             elif stage == "float":
                 return 100.0
