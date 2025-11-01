@@ -24,6 +24,7 @@ from owon_psu import OwonPSU
 from charging_modes import create_charging_mode, ChargingMode
 from safety_monitor import SafetyMonitor, SafetyLimits
 from mqtt_client import ChargerMQTTClient
+from battery_profiles import BatteryProfileManager
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,13 @@ class BatteryCharger:
         Args:
             config_path: Path to configuration YAML file
         """
+        self.config_path = config_path  # Store for profile switching
         self.config = self._load_config(config_path)
         self.psu: Optional[OwonPSU] = None
         self.charging_mode: Optional[ChargingMode] = None
         self.safety_monitor: Optional[SafetyMonitor] = None
         self.mqtt_client: Optional[ChargerMQTTClient] = None
+        self.battery_profile_manager: Optional[BatteryProfileManager] = None
         self.temperature_monitor = None
         self.running = False
         self.charging = False
@@ -154,6 +157,12 @@ class BatteryCharger:
             else:
                 logger.info("Temperature monitoring disabled in configuration")
 
+        # Initialize battery profile manager
+        config_dir = os.path.dirname(self.config_path) or 'config'
+        self.battery_profile_manager = BatteryProfileManager(config_dir)
+        profiles = self.battery_profile_manager.list_profiles()
+        logger.info(f"Battery profiles available: {', '.join(profiles)}")
+
         # Initialize MQTT if enabled
         mqtt_config = self.config.get('mqtt', {})
         if mqtt_config.get('enabled', False):
@@ -167,7 +176,8 @@ class BatteryCharger:
                     on_start=self._cmd_start,
                     on_stop=self._cmd_stop,
                     on_mode=self._cmd_change_mode,
-                    on_current=self._cmd_change_current
+                    on_current=self._cmd_change_current,
+                    on_profile=self._cmd_change_profile
                 )
 
         logger.info("Initialization complete")
@@ -211,6 +221,51 @@ class BatteryCharger:
                 logger.info(f"Current set to {current}A")
             except Exception as e:
                 logger.error(f"Failed to set current: {e}")
+
+    def _cmd_change_profile(self, profile_name: str):
+        """Handle MQTT battery profile change command."""
+        logger.info(f"Battery profile change requested to: {profile_name}")
+
+        # Cannot change profile while charging
+        if self.charging:
+            logger.error("Cannot change battery profile while charging! Stop charging first.")
+            return
+
+        # Check if profile exists
+        if not self.battery_profile_manager.profile_exists(profile_name):
+            available = self.battery_profile_manager.list_profiles()
+            logger.error(f"Profile '{profile_name}' not found. Available: {', '.join(available)}")
+            return
+
+        # Load new profile
+        try:
+            new_config = self.battery_profile_manager.load_profile(profile_name)
+            if not new_config:
+                logger.error(f"Failed to load profile: {profile_name}")
+                return
+
+            # Update configuration
+            self.config = new_config
+            self.config_path = str(self.battery_profile_manager.get_profile_path(profile_name))
+
+            # Clear charging mode (will be recreated on next start)
+            self.charging_mode = None
+
+            # Log profile info
+            info = self.battery_profile_manager.get_profile_info(profile_name)
+            if info:
+                logger.info(
+                    f"Switched to profile '{profile_name}': "
+                    f"{info['model']} ({info['capacity']}Ah, {info['chemistry']}), "
+                    f"mode={info['default_mode']}, "
+                    f"bulk={info['bulk_current']}A, "
+                    f"absorption={info['absorption_voltage']}V"
+                )
+            else:
+                logger.info(f"Switched to battery profile: {profile_name}")
+
+        except Exception as e:
+            logger.error(f"Failed to change battery profile: {e}")
 
     def start_charging(self) -> bool:
         """

@@ -30,6 +30,7 @@ class ChargerMQTTClient:
         self.on_stop_callback: Optional[Callable] = None
         self.on_mode_callback: Optional[Callable[[str], None]] = None
         self.on_current_callback: Optional[Callable[[float], None]] = None
+        self.on_profile_callback: Optional[Callable[[str], None]] = None
 
         # Status tracking
         self.last_publish_time = 0.0
@@ -160,6 +161,11 @@ class ChargerMQTTClient:
                 except ValueError:
                     logger.error(f"Invalid current value: {payload}")
 
+            elif topic == f"{self.base_topic}/cmd/profile":
+                logger.info(f"MQTT command: SET PROFILE to {payload}")
+                if self.on_profile_callback:
+                    self.on_profile_callback(payload)
+
         except Exception as e:
             logger.error(f"Error processing MQTT message: {e}")
 
@@ -171,6 +177,7 @@ class ChargerMQTTClient:
             (f"{self.base_topic}/cmd/stop", qos),
             (f"{self.base_topic}/cmd/mode", qos),
             (f"{self.base_topic}/cmd/current", qos),
+            (f"{self.base_topic}/cmd/profile", qos),
         ]
 
         for topic, topic_qos in topics:
@@ -260,7 +267,8 @@ class ChargerMQTTClient:
         on_start: Optional[Callable] = None,
         on_stop: Optional[Callable] = None,
         on_mode: Optional[Callable[[str], None]] = None,
-        on_current: Optional[Callable[[float], None]] = None
+        on_current: Optional[Callable[[float], None]] = None,
+        on_profile: Optional[Callable[[str], None]] = None
     ):
         """
         Set callbacks for MQTT commands.
@@ -270,11 +278,13 @@ class ChargerMQTTClient:
             on_stop: Callback for stop command
             on_mode: Callback for mode change (receives mode name)
             on_current: Callback for current change (receives current value)
+            on_profile: Callback for battery profile change (receives profile name)
         """
         self.on_start_callback = on_start
         self.on_stop_callback = on_stop
         self.on_mode_callback = on_mode
         self.on_current_callback = on_current
+        self.on_profile_callback = on_profile
 
     def is_connected(self) -> bool:
         """Check if connected to broker."""
