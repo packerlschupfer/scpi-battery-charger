@@ -17,11 +17,17 @@ Professional intelligent battery charger controller for **OWON SPE series** prog
 ✅ **Data Logging** - CSV logs with complete charging history
 
 ### Advanced Features
+✅ **26 Battery Profiles** - Pre-configured for 2V/6V/12V/24V batteries (sealed & flooded)
+✅ **Battery Profile Switching** - Change battery via MQTT without config edits
+✅ **Charge Scheduling** - Schedule charging with start time and duration limits
+✅ **Battery History Tracking** - Track charge cycles, capacity, and health over time
+✅ **Error Recovery** - Auto-reconnect PSU and MQTT on connection failures
+✅ **Multi-Voltage Support** - 0.01V to 60V (2V cells to 48V battery packs)
 ✅ **Voltage Plateau Detection** - Auto-stop for high-voltage flooded battery charging
 ✅ **Power Monitoring** - Real-time V/A/W measurements
 ✅ **Temperature Sensor** - Optional DS18B20 support for battery temperature
 ✅ **Charging Efficiency Tracking** - Accounts for 17% losses (heat/gas)
-✅ **12.5V Warning Threshold** - Critical SOC monitoring
+✅ **Improved Progress Calculation** - Smoother 0→70%→95%→100% progression
 ✅ **Systemd Service** - Auto-start, watchdog, automatic restart
 
 ### Integration
@@ -233,7 +239,22 @@ battery-charger/cmd/start             # Payload: "" (start charging)
 battery-charger/cmd/stop              # Payload: "" (stop charging)
 battery-charger/cmd/mode              # Payload: "IUoU" / "CV" / "Pulse" / "Trickle"
 battery-charger/cmd/current           # Payload: "5.0" (set current in A)
+battery-charger/cmd/profile           # Payload: "12v_sealed_20ah" (switch battery profile)
+
+# Charge Scheduling
+battery-charger/cmd/schedule          # Payload: JSON {"start_time": "14:30", "duration": "2h", "profile": "lucas_44ah"}
+battery-charger/cmd/schedule/cancel   # Payload: "" (cancel scheduled charge)
 ```
+
+**Battery Profile Examples:**
+- `12v_sealed_20ah` - 12V 20Ah sealed/AGM battery
+- `12v_flooded_75ah` - 12V 75Ah flooded/wet battery
+- `6v_flooded_200ah` - 6V 200Ah golf cart battery
+- `2v_sealed_100ah` - 2V 100Ah industrial cell
+- `24v_battery` - 24V battery pack
+- `lucas_44ah` - Lucas Premium LP063 44Ah (specific battery)
+
+**26 profiles available** - See `config/` directory or [NEW_FEATURES.md](docs/NEW_FEATURES.md)
 
 ## Home Assistant Integration
 
@@ -429,21 +450,22 @@ scpi-battery-charger/
 6. ✅ Monitor first charging cycle
 7. ✅ Set up alerts/notifications
 
-## Advantages vs ESP32 Version
-
-✅ **Simpler** - No display/button hardware
-✅ **More Reliable** - Linux stability
-✅ **Easier Debugging** - SSH access, logs
-✅ **Better Integration** - MQTT, Home Assistant
-✅ **More Power** - Can add web dashboard
-✅ **Flexible** - Easy to extend with Python
-
 ## Documentation
 
+### Getting Started
 - **[Installation Guide](docs/INSTALLATION_GUIDE.md)** - Complete beginner-friendly setup guide
 - **[PSU Selection Guide](config/psu_templates/README.md)** - Choose the right OWON model
 - **[Battery Types Guide](CONFIGURATION_SUMMARY.md)** - Lead-calcium vs lead-antimony
 - **[Systemd Service Setup](docs/SYSTEMD_SERVICE.md)** - Auto-start configuration
+
+### New Features (2025)
+- **[NEW_FEATURES.md](docs/NEW_FEATURES.md)** - Battery profiles, scheduling, history tracking, error recovery
+- **26 Battery Profiles** - `config/charging_config_*.yaml` files for 2V-24V batteries
+  - 12V Sealed (AGM/Gel): 7Ah, 12Ah, 20Ah, 35Ah, 75Ah, 100Ah
+  - 12V Flooded: 45Ah, 60Ah, 75Ah, 100Ah, 200Ah
+  - 6V Golf Cart: 200Ah, 250Ah
+  - 2V Industrial: 100Ah, 200Ah, 600Ah
+  - 24V Battery Packs, plus specific batteries (Lucas, Banner, 4MAX)
 
 ## Support & Community
 
