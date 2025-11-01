@@ -9,34 +9,34 @@ Professional intelligent battery charger controller for **OWON SPE series** prog
 ## Features
 
 ### Core Functionality
-✅ **OWON SPE Series Support** - Full SCPI control (SPE3102/3103/6103/6205)
-✅ **Multiple Charging Modes** - IUoU (3-stage), CV, Pulse, Trickle
-✅ **MQTT Integration** - Complete monitoring and control
-✅ **Energy Accounting** - Ah/Wh delivered and stored (Coulomb counting)
-✅ **Safety Monitoring** - Multi-layer protection with automatic shutdown
-✅ **Data Logging** - CSV logs with complete charging history
+- **OWON SPE Series Support** - Full SCPI control (SPE3102/3103/6103/6205)
+- **Multiple Charging Modes** - IUoU (3-stage), CV, Pulse, Trickle
+- **MQTT Integration** - Complete monitoring and control
+- **Energy Accounting** - Ah/Wh delivered and stored (Coulomb counting)
+- **Safety Monitoring** - Multi-layer protection with automatic shutdown
+- **Data Logging** - CSV logs with complete charging history
 
 ### Advanced Features
-✅ **26 Battery Profiles** - Pre-configured for 2V/6V/12V/24V batteries (sealed & flooded)
-✅ **Battery Profile Switching** - Change battery via MQTT without config edits
-✅ **Charge Scheduling** - Schedule charging with start time and duration limits
-✅ **Battery History Tracking** - Track charge cycles, capacity, and health over time
-✅ **Error Recovery** - Auto-reconnect PSU and MQTT on connection failures
-✅ **Multi-Voltage Support** - 0.01V to 60V (2V cells to 48V battery packs)
-✅ **Voltage Plateau Detection** - Auto-stop for high-voltage flooded battery charging
-✅ **Power Monitoring** - Real-time V/A/W measurements
-✅ **Temperature Sensor** - Optional DS18B20 support for battery temperature
-✅ **Charging Efficiency Tracking** - Accounts for 17% losses (heat/gas)
-✅ **Improved Progress Calculation** - Smoother 0→70%→95%→100% progression
-✅ **Systemd Service** - Auto-start, watchdog, automatic restart
+- **26 Battery Profiles** - Pre-configured for 2V/6V/12V/24V batteries (sealed & flooded)
+- **Battery Profile Switching** - Change battery via MQTT without config edits
+- **Charge Scheduling** - Schedule charging with start time and duration limits
+- **Battery History Tracking** - Track charge cycles, capacity, and health over time
+- **Error Recovery** - Auto-reconnect PSU and MQTT on connection failures
+- **Multi-Voltage Support** - 0.01V to 60V (2V cells to 48V battery packs)
+- **Voltage Plateau Detection** - Auto-stop for high-voltage flooded battery charging
+- **Power Monitoring** - Real-time V/A/W measurements
+- **Temperature Sensor** - Optional DS18B20 support for battery temperature
+- **Charging Efficiency Tracking** - Accounts for 17% losses (heat/gas)
+- **Improved Progress Calculation** - Smoother 0→70%→95%→100% progression
+- **Systemd Service** - Auto-start, watchdog, automatic restart
 
 ### Integration
-✅ **Home Assistant** - Full integration with sensors and switches
-✅ **Remote Control** - MQTT control from any client
-✅ **Web Dashboards** - Compatible with Node-RED, Grafana, etc.
-✅ **SSH Access** - Full Linux debugging and monitoring
+- **Home Assistant** - Full integration with sensors and switches
+- **Remote Control** - MQTT control from any client
+- **Web Dashboards** - Compatible with Node-RED, Grafana, etc.
+- **SSH Access** - Full Linux debugging and monitoring
 
-## ⚠️ CRITICAL: Battery Type Configuration
+## CRITICAL: Battery Type Configuration
 
 **Modern batteries need DIFFERENT voltages than old batteries!**
 
@@ -62,13 +62,13 @@ This project includes **TWO configurations**:
 - "Calcium", "Ca/Ca", "Maintenance Free" → Lead-calcium (15.2V)
 - "Sb", "Antimony", removable caps → Lead-antimony (14.4V)
 
-**📖 Full guide:** See [docs/BATTERY_TYPES.md](docs/BATTERY_TYPES.md) for detailed identification
+**Full guide:** See [docs/BATTERY_TYPES.md](docs/BATTERY_TYPES.md) for detailed identification
 
 ### Why This Matters
 
 Using wrong voltages:
-- ❌ **14.4V on lead-calcium** → Battery never fully charges → premature failure
-- ⚠️ **15.2V on lead-antimony** → Excessive gassing → water loss
+- **14.4V on lead-calcium** → Battery never fully charges → premature failure
+- **15.2V on lead-antimony** → Excessive gassing → water loss
 
 **Most "dead" batteries just need the correct charging voltage!**
 
@@ -85,7 +85,7 @@ config/charging_config_lead_antimony.yaml      # 14.4V charging
 python3 src/charger_main.py --config config/charging_config_lead_antimony.yaml
 ```
 
-**📖 Technical References:**
+**Technical References:**
 - [German Battery Technical Wiki](https://wiki.w311.info/index.php?title=Batterie_Heute) - Complete technical specifications
 - [Microcharge Forum: High-Voltage Charging](https://www.microcharge.de/forum/forum/thread/847-hochspannungsladung-von-bleiakkus) - Expert charging methods
 - [OWON SPE/SP/SPS Programming Manual](https://files.owon.com.cn/software/Application/SP_and_SPE_SPS_programming_manual.pdf) - Official SCPI command reference
@@ -134,30 +134,25 @@ See `config/psu_templates/README.md` for detailed PSU selection guide.
 ```bash
 # 1. Install dependencies
 sudo apt update
-sudo apt install python3 python3-pip python3-venv git mosquitto mosquitto-clients
+sudo apt install python3 python3-serial python3-paho-mqtt python3-yaml git mosquitto mosquitto-clients
 
 # 2. Clone project
 cd ~
 git clone https://github.com/packerlschupfer/scpi-battery-charger.git battery-charger
 cd battery-charger
 
-# 3. Setup Python environment
-python3 -m venv venv
-source venv/bin/activate
-pip install pyserial paho-mqtt pyyaml
-
-# 4. Add user to dialout group (for USB access)
+# 3. Add user to dialout group (for USB access)
 sudo usermod -a -G dialout $USER
 # Log out and back in for this to take effect
 
-# 5. Choose PSU template and configure for your battery
+# 4. Choose PSU template and configure for your battery
 cp config/psu_templates/SPE6205_config.yaml config/charging_config.yaml
 nano config/charging_config.yaml  # Edit battery capacity and current
 
-# 6. Test manually first
+# 5. Test manually first
 python3 src/charger_main.py --auto-start
 
-# 7. Install as systemd service (after testing!)
+# 6. Install as systemd service (after testing!)
 sudo cp battery-charger.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable battery-charger
@@ -385,7 +380,6 @@ sudo journalctl -u battery-charger -n 50
 
 # Run manually to see errors
 cd ~/battery-charger
-source venv/bin/activate
 python3 src/charger_main.py
 ```
 
@@ -439,16 +433,6 @@ scpi-battery-charger/
     ├── CHARGING_MODES.md     # Mode details
     └── MQTT_API.md           # MQTT topic reference
 ```
-
-## Production Deployment
-
-1. ✅ Test manually first
-2. ✅ Configure MQTT broker
-3. ✅ Install systemd service
-4. ✅ Add to Home Assistant
-5. ✅ Test remote start/stop
-6. ✅ Monitor first charging cycle
-7. ✅ Set up alerts/notifications
 
 ## Documentation
 
