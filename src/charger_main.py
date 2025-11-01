@@ -25,6 +25,9 @@ from charging_modes import create_charging_mode, ChargingMode
 from safety_monitor import SafetyMonitor, SafetyLimits
 from mqtt_client import ChargerMQTTClient
 from battery_profiles import BatteryProfileManager
+from charge_scheduler import ChargeScheduler
+from error_recovery import ErrorRecoveryManager
+from battery_history import BatteryHistoryTracker
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +57,17 @@ class BatteryCharger:
         self.safety_monitor: Optional[SafetyMonitor] = None
         self.mqtt_client: Optional[ChargerMQTTClient] = None
         self.battery_profile_manager: Optional[BatteryProfileManager] = None
+        self.charge_scheduler: Optional[ChargeScheduler] = None
+        self.error_recovery: Optional[ErrorRecoveryManager] = None
+        self.battery_history: Optional[BatteryHistoryTracker] = None
         self.temperature_monitor = None
         self.running = False
         self.charging = False
         self.csv_file = None
         self.csv_writer = None
         self._shutdown_called = False  # Prevent double-shutdown
+        self._charge_start_voltage = 0.0  # Track for history
+        self._charge_start_time = 0.0  # Track for history
 
         # Set up signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -163,6 +171,24 @@ class BatteryCharger:
         profiles = self.battery_profile_manager.list_profiles()
         logger.info(f"Battery profiles available: {', '.join(profiles)}")
 
+        # Initialize charge scheduler
+        self.charge_scheduler = ChargeScheduler()
+        self.charge_scheduler.set_callbacks(
+            on_start=self._cmd_start,
+            on_stop=self._cmd_stop,
+            on_profile=self._cmd_change_profile
+        )
+        logger.info("Charge scheduler initialized")
+
+        # Initialize error recovery
+        self.error_recovery = ErrorRecoveryManager()
+        logger.info("Error recovery manager initialized")
+
+        # Initialize battery history tracker
+        history_file = "battery_history.json"
+        self.battery_history = BatteryHistoryTracker(history_file)
+        logger.info(f"Battery history tracker initialized ({history_file})")
+
         # Initialize MQTT if enabled
         mqtt_config = self.config.get('mqtt', {})
         if mqtt_config.get('enabled', False):
@@ -177,7 +203,9 @@ class BatteryCharger:
                     on_stop=self._cmd_stop,
                     on_mode=self._cmd_change_mode,
                     on_current=self._cmd_change_current,
-                    on_profile=self._cmd_change_profile
+                    on_profile=self._cmd_change_profile,
+                    on_schedule=self._cmd_schedule,
+                    on_schedule_cancel=self._cmd_schedule_cancel
                 )
 
         logger.info("Initialization complete")
@@ -267,6 +295,60 @@ class BatteryCharger:
         except Exception as e:
             logger.error(f"Failed to change battery profile: {e}")
 
+    def _cmd_schedule(self, schedule_params: dict):
+        """
+        Handle MQTT schedule command.
+
+        Args:
+            schedule_params: Dictionary with schedule parameters:
+                - start_time: Time string ("now", "14:30", "2025-11-02 14:30")
+                - duration: Duration string ("1h", "30m", "3600")
+                - profile: Battery profile to use (optional)
+                - mode: Charging mode to use (optional)
+        """
+        if not self.charge_scheduler:
+            logger.error("Charge scheduler not initialized")
+            return
+
+        try:
+            # Parse start time
+            start_time_str = schedule_params.get('start_time', 'now')
+            start_time = self.charge_scheduler.parse_start_time(start_time_str)
+
+            # Parse duration (optional)
+            duration = None
+            if 'duration' in schedule_params:
+                duration = self.charge_scheduler.parse_duration(schedule_params['duration'])
+
+            # Get profile and mode (optional)
+            profile = schedule_params.get('profile')
+            mode = schedule_params.get('mode')
+
+            # Schedule the charge
+            self.charge_scheduler.schedule_charge(
+                start_time=start_time,
+                duration=duration,
+                profile=profile,
+                mode=mode
+            )
+
+            logger.info(f"Charging scheduled: start={start_time_str}, duration={schedule_params.get('duration', 'unlimited')}, profile={profile or 'current'}")
+
+        except Exception as e:
+            logger.error(f"Failed to schedule charge: {e}")
+
+    def _cmd_schedule_cancel(self):
+        """Handle MQTT schedule cancel command."""
+        if not self.charge_scheduler:
+            logger.error("Charge scheduler not initialized")
+            return
+
+        try:
+            self.charge_scheduler.cancel_schedule()
+            logger.info("Scheduled charge cancelled")
+        except Exception as e:
+            logger.error(f"Failed to cancel schedule: {e}")
+
     def start_charging(self) -> bool:
         """
         Start charging process.
@@ -297,6 +379,11 @@ class BatteryCharger:
             # Open CSV log file
             self._open_log_file()
 
+            # Record start conditions for history
+            if self.psu:
+                self._charge_start_voltage = self.psu.measure_voltage()
+                self._charge_start_time = time.time()
+
             self.charging = True
             logger.info("Charging started")
             return True
@@ -321,6 +408,41 @@ class BatteryCharger:
 
             # Close log file
             self._close_log_file()
+
+            # Record session in battery history
+            if self.battery_history and self.psu and self._charge_start_time > 0:
+                try:
+                    end_voltage = self.psu.measure_voltage()
+                    duration = int(time.time() - self._charge_start_time)
+
+                    # Get battery model from config
+                    battery_config = self.config.get('battery', {})
+                    battery_model = battery_config.get('model', 'Unknown')
+
+                    # Get charge data from safety monitor
+                    if self.safety_monitor:
+                        ah_delivered = self.safety_monitor.ah_delivered
+                        wh_delivered = self.safety_monitor.wh_delivered
+                    else:
+                        ah_delivered = 0.0
+                        wh_delivered = 0.0
+
+                    # Get charging mode
+                    mode = self.charging_mode.mode_name if self.charging_mode else 'Unknown'
+
+                    # Record session
+                    self.battery_history.record_charge_session(
+                        battery_model=battery_model,
+                        start_voltage=self._charge_start_voltage,
+                        end_voltage=end_voltage,
+                        ah_delivered=ah_delivered,
+                        wh_delivered=wh_delivered,
+                        duration=duration,
+                        mode=mode,
+                        success=True
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to record battery history: {e}")
 
             self.charging = False
             logger.info("Charging stopped")
@@ -477,6 +599,15 @@ class BatteryCharger:
                     ):
                         logger.info("Charging complete")
                         self.stop_charging()
+
+                # Update charge scheduler (if enabled)
+                if self.charge_scheduler:
+                    self.charge_scheduler.update()
+
+                # Check connections and attempt recovery
+                if self.error_recovery:
+                    self.error_recovery.check_psu_connection(self.psu, check_interval=10.0)
+                    self.error_recovery.check_mqtt_connection(self.mqtt_client, check_interval=10.0)
 
                 # Sleep until next measurement
                 time.sleep(measurement_interval)

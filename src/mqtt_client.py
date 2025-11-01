@@ -31,6 +31,8 @@ class ChargerMQTTClient:
         self.on_mode_callback: Optional[Callable[[str], None]] = None
         self.on_current_callback: Optional[Callable[[float], None]] = None
         self.on_profile_callback: Optional[Callable[[str], None]] = None
+        self.on_schedule_callback: Optional[Callable[[dict], None]] = None
+        self.on_schedule_cancel_callback: Optional[Callable] = None
 
         # Status tracking
         self.last_publish_time = 0.0
@@ -166,6 +168,21 @@ class ChargerMQTTClient:
                 if self.on_profile_callback:
                     self.on_profile_callback(payload)
 
+            elif topic == f"{self.base_topic}/cmd/schedule":
+                logger.info(f"MQTT command: SCHEDULE charging")
+                try:
+                    # Parse JSON payload with schedule parameters
+                    schedule_params = json.loads(payload)
+                    if self.on_schedule_callback:
+                        self.on_schedule_callback(schedule_params)
+                except json.JSONDecodeError:
+                    logger.error(f"Invalid schedule JSON: {payload}")
+
+            elif topic == f"{self.base_topic}/cmd/schedule/cancel":
+                logger.info("MQTT command: CANCEL schedule")
+                if self.on_schedule_cancel_callback:
+                    self.on_schedule_cancel_callback()
+
         except Exception as e:
             logger.error(f"Error processing MQTT message: {e}")
 
@@ -178,6 +195,8 @@ class ChargerMQTTClient:
             (f"{self.base_topic}/cmd/mode", qos),
             (f"{self.base_topic}/cmd/current", qos),
             (f"{self.base_topic}/cmd/profile", qos),
+            (f"{self.base_topic}/cmd/schedule", qos),
+            (f"{self.base_topic}/cmd/schedule/cancel", qos),
         ]
 
         for topic, topic_qos in topics:
@@ -268,7 +287,9 @@ class ChargerMQTTClient:
         on_stop: Optional[Callable] = None,
         on_mode: Optional[Callable[[str], None]] = None,
         on_current: Optional[Callable[[float], None]] = None,
-        on_profile: Optional[Callable[[str], None]] = None
+        on_profile: Optional[Callable[[str], None]] = None,
+        on_schedule: Optional[Callable[[dict], None]] = None,
+        on_schedule_cancel: Optional[Callable] = None
     ):
         """
         Set callbacks for MQTT commands.
@@ -279,12 +300,16 @@ class ChargerMQTTClient:
             on_mode: Callback for mode change (receives mode name)
             on_current: Callback for current change (receives current value)
             on_profile: Callback for battery profile change (receives profile name)
+            on_schedule: Callback for scheduling charge (receives schedule params dict)
+            on_schedule_cancel: Callback for canceling schedule
         """
         self.on_start_callback = on_start
         self.on_stop_callback = on_stop
         self.on_mode_callback = on_mode
         self.on_current_callback = on_current
         self.on_profile_callback = on_profile
+        self.on_schedule_callback = on_schedule
+        self.on_schedule_cancel_callback = on_schedule_cancel
 
     def is_connected(self) -> bool:
         """Check if connected to broker."""
