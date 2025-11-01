@@ -427,8 +427,8 @@ class BatteryCharger:
                         ah_delivered = 0.0
                         wh_delivered = 0.0
 
-                    # Get charging mode
-                    mode = self.charging_mode.mode_name if self.charging_mode else 'Unknown'
+                    # Get charging mode (use class name)
+                    mode = self.charging_mode.__class__.__name__ if self.charging_mode else 'Unknown'
 
                     # Record session
                     self.battery_history.record_charge_session(
