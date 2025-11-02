@@ -1,5 +1,7 @@
 # Automation Scripts
 
+**English | [Deutsch](README.de.md)**
+
 ## stop_charging.sh
 
 **Properly stop the battery charger with graceful shutdown.**
