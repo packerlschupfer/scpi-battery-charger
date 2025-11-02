@@ -219,7 +219,7 @@ sudo journalctl -u battery-charger -n 20
 | Survives logout | ✅ Yes | ✅ Yes |
 | Automatic restart on crash | ✅ Yes | ❌ No |
 | System logging (journald) | ✅ Yes | ❌ No |
-| Easy debugging | ⚠️ Harder | ✅ Easier |
+| Easy debugging |  Harder | ✅ Easier |
 | Production use | ✅ Recommended | ❌ Not recommended |
 
 **Recommendation:** Use systemd service for normal operation, screen for testing/debugging.

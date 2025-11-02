@@ -47,19 +47,19 @@ This guide helps you identify your battery type and select the correct configura
 **Look for these markings:**
 
 #### Lead-Calcium Indicators:
-- ✓ "Calcium" or "Ca/Ca"
-- ✓ "Maintenance Free"
-- ✓ "MF" (Maintenance Free)
-- ✓ "Sealed" (but not AGM)
-- ✓ No removable caps (or sealed plugs)
-- ✓ "Low Self-Discharge"
+- "Calcium" or "Ca/Ca"
+- "Maintenance Free"
+- "MF" (Maintenance Free)
+- "Sealed" (but not AGM)
+- No removable caps (or sealed plugs)
+- "Low Self-Discharge"
 
 #### Lead-Antimony Indicators:
-- ✓ "Sb" or "Antimony"
-- ✓ "Conventional"
-- ✓ "Low Maintenance" (paradoxically needs MORE maintenance)
-- ✓ Removable caps for water refill
-- ✓ "Add Water Only"
+- "Sb" or "Antimony"
+- "Conventional"
+- "Low Maintenance" (paradoxically needs MORE maintenance)
+- Removable caps for water refill
+- "Add Water Only"
 
 ### Method 3: Physical Inspection
 
@@ -112,14 +112,14 @@ Lead-calcium batteries typically show slightly lower resting voltage for same st
 **Electrode Material:** Lead-Calcium alloy
 
 **Characteristics:**
-- ✓ Maintenance-free (no water loss)
-- ✓ Low self-discharge (1 year standby)
-- ✓ Longer lifespan (6-10+ years)
-- ✓ Sealed construction
-- ✓ Taschen-Separators (pocket separators)
-- ✗ Higher charging voltages required
-- ✗ Sensitive to deep discharge below 50%
-- ✗ Acid stratification when deeply discharged
+- Maintenance-free (no water loss)
+- Low self-discharge (1 year standby)
+- Longer lifespan (6-10+ years)
+- Sealed construction
+- Taschen-Separators (pocket separators)
+- Higher charging voltages required
+- Sensitive to deep discharge below 50%
+- Acid stratification when deeply discharged
 
 **Charging Voltages:**
 | Stage | Voltage |
@@ -140,13 +140,13 @@ Lead-calcium batteries typically show slightly lower resting voltage for same st
 **Electrode Material:** Lead-Antimony alloy
 
 **Characteristics:**
-- ✓ Tolerates deep discharge better
-- ✓ Lower charging voltages
-- ✓ Easier to recondition
-- ✗ Requires regular water refill
-- ✗ High self-discharge (3 months standby)
-- ✗ Shorter lifespan (3-5 years)
-- ✗ Produces more gas when charging
+- Tolerates deep discharge better
+- Lower charging voltages
+- Easier to recondition
+- Requires regular water refill
+- High self-discharge (3 months standby)
+- Shorter lifespan (3-5 years)
+- Produces more gas when charging
 
 **Charging Voltages:**
 | Stage | Voltage |
@@ -274,7 +274,7 @@ Lead-calcium batteries typically show slightly lower resting voltage for same st
 
 #### Using Lead-Calcium Voltages (15.2V) on Lead-Antimony Battery:
 
-**Result:** ⚠️ OVERCHARGING (but less dangerous)
+**Result:**  OVERCHARGING (but less dangerous)
 - Excessive gassing (hydrogen production)
 - Water consumption
 - Possible grid corrosion

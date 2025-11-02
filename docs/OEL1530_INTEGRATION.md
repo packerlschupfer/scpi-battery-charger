@@ -354,7 +354,7 @@ def full_capacity_test(battery_capacity_ah: float = 95):
     if health_percent >= 80:
         print("Status: GOOD ✓")
     elif health_percent >= 50:
-        print("Status: FAIR ⚠️")
+        print("Status: FAIR ")
     else:
         print("Status: POOR ❌ (consider replacement)")
 

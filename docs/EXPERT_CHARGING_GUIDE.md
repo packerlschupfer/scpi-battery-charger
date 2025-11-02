@@ -85,7 +85,7 @@ AGM batteries have slightly higher resting voltages:
 
 ### 12.5V Warning - Recharge Immediately!
 
-**⚠️ When resting voltage drops to 12.5V (80% SOC), recharge immediately!**
+** When resting voltage drops to 12.5V (80% SOC), recharge immediately!**
 - Risk of permanent damage if discharged further
 - Sulfation accelerates below this point
 - Per German technical diagram: "Batterie sofort laden!"
