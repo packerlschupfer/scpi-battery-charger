@@ -1,5 +1,7 @@
 # SCPI Battery Charger - Raspberry Pi + OWON SPE Series
 
+**English | [Deutsch](README.de.md)**
+
 Professional intelligent battery charger controller for **OWON SPE series** programmable power supplies running on Raspberry Pi.
 
 **Supported models**: SPE3102, SPE3103, SPE6103, SPE6205 (and likely other SCPI-compatible PSUs)
