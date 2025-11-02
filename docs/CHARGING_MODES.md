@@ -100,17 +100,21 @@ charging:
 
 ### Voltage Guidelines by Battery Type
 
-**Flooded Lead-Acid (FLA):**
+**IMPORTANT: Modern batteries (2010+) use lead-calcium chemistry and need HIGHER voltages!**
+
+**Lead-Calcium (Modern, 2010+):**
+- Bulk/Absorption: 15.0 - 15.4V (sealed: 15.2V, flooded: 16.2V)
+- Float: 13.5 - 13.8V
+
+**Lead-Antimony (Legacy, pre-2010):**
 - Bulk/Absorption: 14.4 - 14.8V
 - Float: 13.5 - 13.8V
 
-**AGM (Absorbed Glass Mat):**
-- Bulk/Absorption: 14.4 - 14.7V
+**AGM/Gel (Sealed):**
+- Bulk/Absorption: 14.4 - 15.2V (check manufacturer specs)
 - Float: 13.4 - 13.7V
 
-**Gel:**
-- Bulk/Absorption: 14.1 - 14.4V
-- Float: 13.5 - 13.8V
+**Note:** The examples in this document use legacy 14.4V values for simplicity. For modern lead-calcium batteries, use 15.2V for sealed or 16.2V for flooded. See main README.md for detailed battery type identification.
 
 ### Typical Timeline
 
@@ -136,7 +140,7 @@ Single-stage constant voltage charging. Simplest method.
 ```
 Time:    0s ─────────────────────────→ Variable
 Voltage: 13.8V ══════════════════════ 13.8V (constant)
-Current: 5.0A ──────────────────────→ <0.5A (tapers naturally)
+Current: 9.5A ──────────────────────→ <0.5A (tapers naturally)
 ```
 
 **What happens:**
@@ -157,13 +161,13 @@ charging:
 
 ### When to Use
 
-✓ Good for:
+**Good for:**
 - Topping off partially charged battery
 - Maintenance charging
 - Simple operation
 - Older batteries that don't tolerate high voltage
 
-✗ Not ideal for:
+**Not ideal for:**
 - Deep discharge recovery
 - Fast charging
 - Precise state of charge
@@ -197,7 +201,7 @@ Cycle 20: Pulse (30s) ─→ Rest (30s) ─→ Complete
 **Pulse Phase:**
 ```
 Voltage: 15.5V (high!)
-Current: 5.0A (max)
+Current: 9.5A (typical)
 Duration: 30s
 ```
 
@@ -231,7 +235,7 @@ High voltage pulses can:
 charging:
   Pulse:
     pulse_voltage: 15.5      # V - High pulse voltage
-    pulse_current: 5.0       # A - Pulse current
+    pulse_current: 9.5       # A - Pulse current (C/10 rate for 95Ah)
     rest_voltage: 13.0       # V - Rest voltage
     pulse_duration: 30       # s - Pulse time
     rest_duration: 30        # s - Rest time
@@ -240,7 +244,7 @@ charging:
 
 ### Safety Notes
 
-⚠️ **IMPORTANT:**
+**IMPORTANT:**
 - 15.5V is HIGH for 12V battery
 - Can cause gassing (hydrogen release)
 - DO NOT use on AGM/Gel without research
@@ -250,13 +254,13 @@ charging:
 
 ### When to Use
 
-✓ Try pulse mode when:
+**Try pulse mode when:**
 - Battery won't hold charge
 - Capacity significantly reduced
 - Battery has been stored discharged
 - Before replacing old battery
 
-✗ Don't use for:
+**Don't use for:**
 - Regular charging
 - New batteries
 - Sealed AGM/Gel (check specs first)
@@ -301,13 +305,13 @@ charging:
 
 ### When to Use
 
-✓ Perfect for:
+**Perfect for:**
 - Winter vehicle storage (3-6 months)
 - Backup power systems
 - Seasonal equipment (boat, RV, motorcycle)
 - Maintaining fully charged battery
 
-✗ Not for:
+**Not for:**
 - Charging discharged battery (too slow)
 - Fast charging needed
 - Active use vehicles
@@ -375,28 +379,35 @@ Is battery deeply discharged? (< 12.0V)
 
 ### Voltage Limits
 
-**Never exceed these for 12V battery:**
-- Flooded: 15.0V absolute max
-- AGM: 14.8V absolute max
-- Gel: 14.4V absolute max
+**Recommended charging voltages for 12V battery:**
+- Lead-Calcium Flooded (modern): 16.2V absorption, 17.0V absolute max
+- Lead-Calcium Sealed (modern): 15.2V absorption, 16.5V absolute max
+- Lead-Antimony (legacy): 14.4-14.8V absorption, 15.5V absolute max
+- AGM/Gel (sealed): 14.1-15.2V (check specs), 15.5V absolute max
 
 **Configured safety limit:**
 ```yaml
 safety:
-  absolute_max_voltage: 16.0  # Emergency cutoff
+  absolute_max_voltage: 16.5  # For sealed lead-calcium
+  # Use 17.0 for flooded lead-calcium
+  # Use 15.5 for legacy lead-antimony
 ```
 
 ### Current Limits
 
-**SPE6205 Hardware:** 5.0A maximum
+**Hardware Limits by Model:**
+- SPE3102/SPE3103: 10A maximum
+- SPE6103: 10A maximum
+- SPE6205: 20A maximum
 
 **Recommended by battery capacity:**
-- C/10 rate = Capacity / 10 (e.g., 95Ah / 10 = 9.5A)
-- C/20 rate = Capacity / 20 (e.g., 95Ah / 20 = 4.75A) ← SAFER
+- C/10 rate = Capacity / 10 (e.g., 95Ah / 10 = 9.5A) - Standard rate
+- C/20 rate = Capacity / 20 (e.g., 95Ah / 20 = 4.75A) - Gentler/slower
 
-**For 95Ah battery:**
-- Safe: 4.75A (C/20)
-- Max: 9.5A (but PSU limited to 5.0A anyway)
+**For 95Ah battery with SPE6205:**
+- Gentle: 4.75A (C/20)
+- Standard: 9.5A (C/10) - recommended
+- Maximum: 20A (hardware limit, not recommended for battery longevity)
 
 ### Temperature
 
@@ -409,7 +420,7 @@ safety:
 
 ### Ventilation
 
-⚠️ **Flooded batteries produce hydrogen gas when charging**
+**WARNING: Flooded batteries produce hydrogen gas when charging**
 
 Requirements:
 - Well-ventilated area
