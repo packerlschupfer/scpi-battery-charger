@@ -1,5 +1,7 @@
 # Charging Modes Guide
 
+**English | [Deutsch](CHARGING_MODES.de.md)**
+
 Detailed explanation of all charging modes, when to use them, and how they work.
 
 ## Overview

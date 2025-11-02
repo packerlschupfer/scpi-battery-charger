@@ -1,5 +1,7 @@
 # Battery Type Identification Guide
 
+**English | [Deutsch](BATTERY_TYPES.de.md)**
+
 **CRITICAL:** Using the wrong charging voltages can damage your battery or prevent it from charging properly!
 
 This guide helps you identify your battery type and select the correct configuration.
