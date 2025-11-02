@@ -1,5 +1,7 @@
 # MQTT API Reference
 
+**English | [Deutsch](MQTT_API.de.md)**
+
 Complete MQTT topic and message reference for Battery Charger Controller.
 
 ## Base Topic
