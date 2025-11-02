@@ -1,5 +1,7 @@
 # OWON PSU Configuration Templates
 
+**English | [Deutsch](README.de.md)**
+
 This directory contains configuration templates for different OWON SPE series power supplies.
 
 ## Supported Models
