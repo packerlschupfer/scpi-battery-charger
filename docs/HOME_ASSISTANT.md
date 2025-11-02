@@ -113,12 +113,12 @@ mqtt:
       icon: mdi:cog
 
   number:
-    # Current adjustment
+    # Current adjustment (adjust max based on your PSU model)
     - name: "Battery Charging Current"
       command_topic: "battery-charger/cmd/current"
       state_topic: "battery-charger/status/current"
       min: 0.5
-      max: 5.0
+      max: 20.0  # SPE6205: 20A, SPE3102/3103/6103: 10A
       step: 0.1
       unit_of_measurement: "A"
       device_class: current
@@ -182,12 +182,12 @@ cards:
     entity: sensor.battery_current
     name: Current
     min: 0
-    max: 5
+    max: 20  # Adjust based on your PSU (SPE6205: 20A, others: 10A)
     needle: true
     severity:
       green: 0
-      yellow: 3
-      red: 4.5
+      yellow: 10
+      red: 18
 ```
 
 ### Progress Bar
@@ -268,7 +268,7 @@ cards:
         entity: sensor.battery_current
         name: Current
         min: 0
-        max: 5
+        max: 20  # Adjust for your PSU model
         needle: true
 
   # Progress
@@ -343,7 +343,7 @@ automation:
     trigger:
       - platform: numeric_state
         entity_id: sensor.battery_voltage
-        above: 15.5
+        above: 16.5  # Adjust based on battery type (sealed: 16.5V, flooded: 17.0V, legacy: 15.5V)
     action:
       - service: notify.mobile_app
         data:

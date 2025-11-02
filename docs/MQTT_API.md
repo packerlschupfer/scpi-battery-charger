@@ -90,7 +90,7 @@ Current charging current measurement.
 **QoS:** 1
 **Update:** Every 5 seconds
 
-**Range:** 0.0 - 5.0 (SPE6205 limit)
+**Range:** 0.0 - 20.0 (SPE6205: 20A, SPE3102/3103/6103: 10A)
 
 **Example:**
 ```
@@ -336,7 +336,7 @@ Adjust charging current limit.
 **QoS:** 1
 **Response:** Updates `status/current` (if charging)
 
-**Range:** 0.5 - 5.0 (SPE6205 limit)
+**Range:** 0.5 - 20.0 (SPE6205: 20A max, adjust for your PSU model)
 
 **Example:**
 ```bash
