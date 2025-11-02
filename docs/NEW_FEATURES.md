@@ -1,5 +1,7 @@
 # New Features Guide
 
+**English | [Deutsch](NEW_FEATURES.de.md)**
+
 This document describes the new features added to the battery charger system.
 
 ## Feature Summary

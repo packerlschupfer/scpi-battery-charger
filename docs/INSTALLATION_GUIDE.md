@@ -1,5 +1,7 @@
 # Complete Installation Guide - Beginner Friendly
 
+**English | [Deutsch](INSTALLATION_GUIDE.de.md)**
+
 This guide walks you through the complete setup from scratch, even if you're new to Raspberry Pi or Linux.
 
 ## Table of Contents
