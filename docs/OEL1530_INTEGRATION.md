@@ -1,5 +1,7 @@
 # OWON OEL1530 Electronic Load Integration
 
+**English | [Deutsch](OEL1530_INTEGRATION.de.md)**
+
 Integration guide for adding OWON OEL1530 electronic load to the battery testing system.
 
 ## Hardware Overview
@@ -15,11 +17,11 @@ Integration guide for adding OWON OEL1530 electronic load to the battery testing
 - Control: USB, RS232, RS485
 
 **Built-in Features:**
-- ✅ Battery discharge test mode
-- ✅ OCP test (Over Current Protection)
-- ✅ OPP test (Over Power Protection)
-- ✅ Remote compensation (Kelvin sensing)
-- ✅ Direct banana plug connections
+- Battery discharge test mode
+- OCP test (Over Current Protection)
+- OPP test (Over Power Protection)
+- Remote compensation (Kelvin sensing)
+- Direct banana plug connections
 
 ---
 
@@ -352,11 +354,11 @@ def full_capacity_test(battery_capacity_ah: float = 95):
     print(f"Battery Health:  {health_percent:.1f}%")
 
     if health_percent >= 80:
-        print("Status: GOOD ✓")
+        print("Status: GOOD")
     elif health_percent >= 50:
         print("Status: FAIR ")
     else:
-        print("Status: POOR ❌ (consider replacement)")
+        print("Status: POOR (consider replacement)")
 
     print("="*60)
 
@@ -500,7 +502,7 @@ As mentioned in the description:
 
 **Comparable commercial battery analyzer: $1000-3000+**
 
-You're building a professional system for a fraction of the cost! 💰
+You're building a professional system for a fraction of the cost!
 
 ---
 
@@ -522,4 +524,4 @@ You're building a professional system for a fraction of the cost! 💰
 - Capacity measurement methods
 - Home lab battery testing best practices
 
-**The OEL1530 is the perfect complement to your SPE6205!** ✓
+**The OEL1530 is the perfect complement to your SPE6205!**
