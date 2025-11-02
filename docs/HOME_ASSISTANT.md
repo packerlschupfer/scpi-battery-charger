@@ -1,5 +1,7 @@
 # Home Assistant Integration Guide
 
+**English | [Deutsch](HOME_ASSISTANT.de.md)**
+
 Complete guide to integrate the Battery Charger with Home Assistant via MQTT.
 
 ## Prerequisites

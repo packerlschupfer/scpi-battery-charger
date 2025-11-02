@@ -1,5 +1,7 @@
 # Expert Battery Charging Guide
 
+**English | [Deutsch](EXPERT_CHARGING_GUIDE.de.md)**
+
 Traditional battery charging wisdom from 150 years of experience with lead-acid batteries.
 
 **Source:** German battery forum expert recommendations
